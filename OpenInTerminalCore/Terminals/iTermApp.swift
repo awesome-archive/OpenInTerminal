@@ -10,53 +10,15 @@ import Foundation
 
 final class iTermApp: Terminal {
     
-    func open(_ path: String, _ newOption: NewOptionType, _ clear: ClearOptionType) throws {
+    func open(_ path: String, _ newOption: NewOptionType) throws {
         
         guard let url = URL(string: path) else {
             throw OITError.wrongUrl
         }
         
-        var source: String
-        
-        let clearCommand = clear == .clear ? ";clear" : ""
-        
-        if newOption == .window {
-            source = """
-            tell application "iTerm"
-                create window with default profile
-                tell current session of current window
-                    write text "cd \(url.path.itermEscaped)\(clearCommand)"
-                end tell
-            end tell
-            """
-        } else {
-            source = """
-            tell application "iTerm"
-                set isRunning to (application "iTerm" is running)
-                activate
-            
-                tell current window
-            
-                    if (count of tabs) < 1 then
-                        create window with default profile
-                        set isRunning to false
-                    end if
-            
-                    if isRunning then
-                        set newTab to (create tab with default profile)
-            
-                        tell newTab
-                            select
-                        end tell
-                    end if
-            
-                    tell current session
-                        write text "cd \(url.path.itermEscaped)\(clearCommand)"
-                    end tell
-                end tell
-            end tell
-            """
-        }
+        let source = """
+        do shell script "open -a iTerm \(url.path.specialCharEscaped)"
+        """
         
         let script = NSAppleScript(source: source)!
         
@@ -65,29 +27,27 @@ final class iTermApp: Terminal {
         script.executeAndReturnError(&error)
         
         if error != nil {
-            throw OITError.cannotAccessIterm
+            throw OITError.cannotAccessApp(TerminalType.iTerm.rawValue)
         }
     }
     
 }
 
-
-fileprivate extension String {
+extension String {
     
     // FIXME: if path contains "\" or """, application will crash.
     // Special symbols have been tested, except for backslashes and double quotes.
-    var itermEscaped: String {
+    var specialCharEscaped: String {
         
         var result = ""
-        let set = CharacterSet.alphanumerics
+        let set: [Character] = [" ", "(", ")", "&", "|", ";",
+                                "\"", "'", "<", ">", "`"]
         
-        for char in self.unicodeScalars {
-            if set.contains(char) || char == "/" {
-                result.unicodeScalars.append(char)
-            } else {
+        for char in self {
+            if set.contains(char) {
                 result += "\\\\"
-                result.unicodeScalars.append(char)
             }
+            result.append(char)
         }
         
         return result

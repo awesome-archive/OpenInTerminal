@@ -17,7 +17,7 @@ final class AtomApp: Editor {
         }
         
         let source = """
-        do shell script "open -a Atom \(url.path.editorEscaped)"
+        do shell script "open -a Atom \(url.path.specialCharEscaped)"
         """
         
         let script = NSAppleScript(source: source)!
@@ -27,7 +27,7 @@ final class AtomApp: Editor {
         script.executeAndReturnError(&error)
         
         if error != nil {
-            throw OITError.cannotAccessAtom
+            throw OITError.cannotAccessApp(EditorType.atom.rawValue)
         }
     }
     

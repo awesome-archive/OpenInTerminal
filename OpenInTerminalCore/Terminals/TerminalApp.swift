@@ -11,7 +11,7 @@ import ScriptingBridge
 
 final class TerminalApp: Terminal {
 
-    func open(_ path: String, _ newOption: NewOptionType, _ clear: ClearOptionType) throws {
+    func open(_ path: String, _ newOption: NewOptionType) throws {
         
         guard let url = URL(string: path) else {
             throw OITError.wrongUrl
@@ -20,29 +20,24 @@ final class TerminalApp: Terminal {
         if newOption == .window {
             
             let terminal = SBApplication(bundleIdentifier: TerminalType.terminal.bundleId)! as TerminalApplication
-            
             guard let open = terminal.open else {
-                throw OITError.cannotAccessTerminal
+                throw OITError.cannotAccessApp(TerminalType.terminal.rawValue)
             }
-            
             open([url])
-            
             terminal.activate()
             
         } else {
             
-            let clearCommand = clear == .clear ? ";clear" : ""
-            
             let source = """
             if not application "Terminal" is running then
                 tell application "Terminal"
-                    do script "cd \(url.path.terminalEscaped)\(clearCommand)"
+                    do script "cd \(url.path.terminalEscaped)"
                     activate
                 end tell
             else
                 tell application "Terminal"
                     if not (exists window 1) then
-                        do script "cd \(url.path.terminalEscaped)\(clearCommand)"
+                        do script "cd \(url.path.terminalEscaped)"
                         activate
                     else
                         activate
@@ -50,23 +45,18 @@ final class TerminalApp: Terminal {
                         repeat while contents of selected tab of window 1 starts with linefeed
                             delay 0.01
                         end repeat
-                        do script "cd \(url.path.terminalEscaped)\(clearCommand)" in window 1
+                        do script "cd \(url.path.terminalEscaped)" in window 1
                     end if
                 end tell
             end if
             """
-            
             let script = NSAppleScript(source: source)!
-            
             var error: NSDictionary?
-            
             script.executeAndReturnError(&error)
-            
             if error != nil {
-                throw OITError.cannotAccessTerminal
+                throw OITError.cannotAccessApp(TerminalType.terminal.rawValue)
             }
         }
-        
     }
     
 }

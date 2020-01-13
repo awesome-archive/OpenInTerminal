@@ -12,6 +12,7 @@
 		95163CF42269F209007C006F /* OpenInTerminalCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95163CF32269F209007C006F /* OpenInTerminalCore.framework */; };
 		95163CF52269F209007C006F /* OpenInTerminalCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 95163CF32269F209007C006F /* OpenInTerminalCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9590B69D226C715100362B93 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9590B69C226C715100362B93 /* Error.swift */; };
+		95ECC130228CF99F00416AA2 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 95ECC132228CF99F00416AA2 /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,6 +30,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		82AE667723896ADB00F4DB4D /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
 		95163CE02269F0C2007C006F /* OpenInTerminal-Lite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "OpenInTerminal-Lite.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		95163CE52269F0C3007C006F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		95163CEA2269F0C3007C006F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -36,6 +38,10 @@
 		95163CF12269F104007C006F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		95163CF32269F209007C006F /* OpenInTerminalCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = OpenInTerminalCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9590B69C226C715100362B93 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
+		9595D2A123BAD74D006CBB36 /* OpenInTerminal-Lite.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "OpenInTerminal-Lite.entitlements"; sourceTree = "<group>"; };
+		95ECC131228CF99F00416AA2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		95ECC133228CF9A100416AA2 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		95ECC134228CF9A200416AA2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		D0C631E3227F8637002C4AA0 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		D0C631E4227F8637002C4AA0 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		D0C631E5227F8637002C4AA0 /* Global.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Global.xcconfig; sourceTree = "<group>"; };
@@ -74,11 +80,13 @@
 		95163CE22269F0C2007C006F /* OpenInTerminal-Lite */ = {
 			isa = PBXGroup;
 			children = (
+				9595D2A123BAD74D006CBB36 /* OpenInTerminal-Lite.entitlements */,
 				95163CF12269F104007C006F /* main.swift */,
 				9590B69C226C715100362B93 /* Error.swift */,
 				95163CE52269F0C3007C006F /* Assets.xcassets */,
 				95163CEA2269F0C3007C006F /* Info.plist */,
 				95163CEB2269F0C3007C006F /* OpenInTerminal_Lite.entitlements */,
+				95ECC132228CF99F00416AA2 /* Localizable.strings */,
 			);
 			path = "OpenInTerminal-Lite";
 			sourceTree = "<group>";
@@ -122,7 +130,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1020;
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1100;
 				ORGANIZATIONNAME = "Jianing Wang";
 				TargetAttributes = {
 					95163CDF2269F0C2007C006F = {
@@ -143,6 +151,9 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
+				fr,
+				ko,
 			);
 			mainGroup = 95163CD72269F0C2007C006F;
 			productRefGroup = 95163CE12269F0C2007C006F /* Products */;
@@ -160,6 +171,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				95163CE62269F0C3007C006F /* Assets.xcassets in Resources */,
+				95ECC130228CF99F00416AA2 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,12 +189,27 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXVariantGroup section */
+		95ECC132228CF99F00416AA2 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				95ECC131228CF99F00416AA2 /* en */,
+				95ECC133228CF9A100416AA2 /* zh-Hans */,
+				95ECC134228CF9A200416AA2 /* fr */,
+				82AE667723896ADB00F4DB4D /* ko */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
 		95163CEC2269F0C3007C006F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D0C631E5227F8637002C4AA0 /* Global.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -244,6 +271,7 @@
 			baseConfigurationReference = D0C631E5227F8637002C4AA0 /* Global.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -298,13 +326,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "OpenInTerminal-Lite/OpenInTerminal-Lite.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = Q33U8R4U57;
+				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "OpenInTerminal-Lite/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "wang.jianing.OpenInTerminal-Lite";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "wang.jianing.app.OpenInTerminal-Lite";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -316,13 +350,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "OpenInTerminal-Lite/OpenInTerminal-Lite.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = Q33U8R4U57;
+				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "OpenInTerminal-Lite/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "wang.jianing.OpenInTerminal-Lite";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "wang.jianing.app.OpenInTerminal-Lite";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};

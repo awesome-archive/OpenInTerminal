@@ -10,6 +10,10 @@ import Foundation
 
 struct Constants {
     
+    static let groupIdentifier = "group.wang.jianing.app.OpenInTerminal"
+    static let openInTerminalLiteIdentifier = "wang.jianing.app.OpenInTerminal-Lite"
+    static let openInEditorLiteIdentifier = "wang.jianing.app.OpenInEditor-Lite"
+    
     struct Finder {
         static let id = "com.apple.Finder"
     }
@@ -17,6 +21,8 @@ struct Constants {
     struct Key {
         static let firstUsage = "OIT_FirstUsage"
         static let launchAtLogin = "OIT_LaunchAtLogin"
+        static let hideStatusItem = "OIT_HideStatusItem"
+        static let hideContextMenuItems = "OIT_HideContextMenuItems"
         static let quickToggle = "OIT_QuickToggle"
         static let quickToggleType = "OIT_QuickToggleType"
         
@@ -25,16 +31,12 @@ struct Constants {
         
         static let terminalNewOption = "OIT_TerminalNewOption"
         static let iTermNewOption = "OIT_iTermNewOption"
-        
-        static let terminalClearOption = "OIT_TerminalClearOption"
-        static let iTermClearOption = "OIT_iTermClearOption"
-        
-        static let copyPathToClipboardVisible = "OIT_CopyPathToClipboardVisible"
     }
 
 }
 
 public enum QuickToggleType: String {
+    
     case openWithDefaultTerminal
     case openWithDefaultEditor
     case copyPathToClipboard
@@ -56,19 +58,13 @@ public enum NewOptionType: String {
     case window
 }
 
-public enum VisibleType: String {
-    case visible
-    case invisible
-}
-
-public enum ClearOptionType: String {
-    case clear
-    case noClear
-}
-
 public enum BoolType: String {
     case _true
     case _false
+    
+    public init(_ boolValue: Bool) {
+        self = boolValue ? ._true : ._false
+    }
     
     public var bool: Bool {
         get {

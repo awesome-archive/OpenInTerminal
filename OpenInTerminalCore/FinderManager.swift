@@ -79,11 +79,27 @@ public class FinderManager {
     
     /// Determine if the app exists in the `/Applications` folder
     private func applicationExists(_ application: String) -> Bool {
-        do {
-            return try FileManager.default.contentsOfDirectory(atPath: "/Applications").contains("\(application).app")
-        } catch {
-            return false
+        var isInApplication = false
+        let applicationDir = "/Applications/"
+        let applicationPath = applicationDir + application + ".app"
+        if FileManager.default.fileExists(atPath: applicationPath) {
+            isInApplication = true
         }
+        
+        var isInHomeApplication = false
+        var homeApplicationDirURL: URL
+        if #available(OSX 10.12, *) {
+            homeApplicationDirURL = FileManager.default.homeDirectoryForCurrentUser
+        } else {
+            // Fallback on earlier versions
+            homeApplicationDirURL = URL(fileURLWithPath: NSHomeDirectory())
+        }
+        homeApplicationDirURL.appendPathComponent("Applications")
+        let homeApplicationPath = homeApplicationDirURL.path + application + ".app"
+        if FileManager.default.fileExists(atPath: homeApplicationPath) {
+            isInHomeApplication = true
+        }
+        return isInApplication || isInHomeApplication
     }
     
     /// Determine if the user has installed the terminal

@@ -12,25 +12,17 @@ import OpenInTerminalCore
 class FinderExtensionPreferencesViewController: PreferencesViewController {
     
     // MARK: Properties
-
+    
+    @IBOutlet weak var installedApplicationsTextField: NSTextField!
+    @IBOutlet weak var notInstalledApplicationsTextField: NSTextField!
+    
     @IBOutlet weak var terminalTextField: NSTextField!
     @IBOutlet weak var terminalWindowButton: NSButton!
     @IBOutlet weak var terminalTabButton: NSButton!
-    @IBOutlet weak var terminalClearButton: NSButton!
-    
     
     @IBOutlet weak var iTermTextField: NSTextField!
     @IBOutlet weak var iTermWindowButton: NSButton!
     @IBOutlet weak var iTermTabButton: NSButton!
-    @IBOutlet weak var iTermClearButton: NSButton!
-    
-    @IBOutlet weak var hyperTextField: NSTextField!
-    
-    @IBOutlet weak var alacrittyTextField: NSTextField!
-    
-    @IBOutlet weak var vscodeTextField: NSTextField!
-    @IBOutlet weak var atomTextField: NSTextField!
-    @IBOutlet weak var sublimeTextField: NSTextField!
     
     // MARK: Lifecycle
     
@@ -41,10 +33,9 @@ class FinderExtensionPreferencesViewController: PreferencesViewController {
     
     override func viewWillAppear() {
         super.viewWillAppear()
-        
+        refreshInstalledApplicationsTextField()
         refreshTextFieldEnabledState()
         refreshButtonNewOptionState()
-        refreshButtonClearOptionState()
         refreshButtonEnabledState()
     }
     
@@ -54,12 +45,38 @@ class FinderExtensionPreferencesViewController: PreferencesViewController {
     
     // MARK: Refresh UI
     
+    func refreshInstalledApplicationsTextField() {
+        let installedTerminals = Constants.allTerminals.filter {
+            FinderManager.shared.terminalIsInstalled($0)
+        }.map {
+            $0.rawValue
+        }
+        let installedEditors = Constants.allEditors.filter {
+            FinderManager.shared.editorIsInstalled($0)
+        }.map {
+            $0.fullName
+        }
+        let installedApps = installedTerminals + installedEditors
+        installedApplicationsTextField.stringValue = installedApps.sorted().joined(separator: ", ")
+        
+        let notInstalledTerminals = Constants.allTerminals.filter {
+            !FinderManager.shared.terminalIsInstalled($0)
+        }.map {
+            $0.rawValue
+        }
+        let notInstalledEditors = Constants.allEditors.filter {
+            !FinderManager.shared.editorIsInstalled($0)
+        }.map {
+            $0.fullName
+        }
+        let notInstalledApps = notInstalledTerminals + notInstalledEditors
+        notInstalledApplicationsTextField.stringValue = notInstalledApps.sorted().joined(separator: ", ")
+    }
+    
     func refreshTextFieldEnabledState() {
         let terminals: [(TerminalType, NSTextField)] =
             [(.terminal, terminalTextField),
-             (.iTerm, iTermTextField),
-             (.hyper, hyperTextField),
-             (.alacritty, alacrittyTextField)]
+             (.iTerm, iTermTextField)]
 
         terminals.forEach { terminal, textField in
             let isInstalled = FinderManager.shared.terminalIsInstalled(terminal)
@@ -73,34 +90,14 @@ class FinderExtensionPreferencesViewController: PreferencesViewController {
                 textField.stringValue = "\(terminal.rawValue) (\(notInstalledString))"
             }
         }
-        
-        let editors: [(EditorType, NSTextField)] =
-            [(.vscode, vscodeTextField),
-             (.atom, atomTextField),
-             (.sublime, sublimeTextField)]
-        
-        editors.forEach { editor, textField in
-            let isInstalled = FinderManager.shared.editorIsInstalled(editor)
-            textField.isEnabled = isInstalled
-            if isInstalled {
-                textField.textColor = .labelColor
-                textField.stringValue = "\(editor.fullName)"
-            } else {
-                textField.textColor = .secondaryLabelColor
-                let notInstalledString = NSLocalizedString("pref.toolbar.not_installed", comment: "Not Installed")
-                textField.stringValue = "\(editor.fullName) (\(notInstalledString))"
-            }
-        }
     }
     
     func refreshButtonEnabledState() {
         terminalWindowButton.isEnabled = terminalTextField.isEnabled
         terminalTabButton.isEnabled = terminalTextField.isEnabled
-        terminalClearButton.isEnabled = terminalTextField.isEnabled
 
         iTermWindowButton.isEnabled = iTermTextField.isEnabled
         iTermTabButton.isEnabled = iTermTextField.isEnabled
-        iTermClearButton.isEnabled = iTermTextField.isEnabled
     }
     
     func refreshButtonNewOptionState() {
@@ -109,7 +106,7 @@ class FinderExtensionPreferencesViewController: PreferencesViewController {
              (.iTerm, iTermWindowButton, iTermTabButton)]
         
         terminals.forEach { terminal, windowButton, tabButton in
-            let _newOption = TerminalManager.shared.getNewOption(terminal)
+            let _newOption = DefaultsManager.shared.getNewOption(terminal)
             if let newOption = _newOption {
                 if newOption == .window {
                     windowButton.state = .on
@@ -122,48 +119,42 @@ class FinderExtensionPreferencesViewController: PreferencesViewController {
         }
     }
     
-    func refreshButtonClearOptionState() {
-        let terminals: [(TerminalType, NSButton)] =
-            [(.terminal, terminalClearButton),
-             (.iTerm, iTermClearButton)]
-        
-        terminals.forEach { terminal, button in
-            let _clearOption = TerminalManager.shared.getClearOption(terminal)
-            if let clearOption = _clearOption {
-                button.state = clearOption == .clear ? .on : .off
-            }
-        }
-    }
-    
     // MARK: Button Actions
     
     @IBAction func terminalWindowButtonClicked(_ sender: NSButton) {
         terminalTabButton.state = .off
-        TerminalManager.shared.setNewOption(.terminal, .window)
+        do {
+            try DefaultsManager.shared.setNewOption(.terminal, .window)
+        } catch {
+            logw(error.localizedDescription)
+        }
     }
     
     @IBAction func terminalTabButtonClicked(_ sender: NSButton) {
         terminalWindowButton.state = .off
-        TerminalManager.shared.setNewOption(.terminal, .tab)
-    }
-    
-    @IBAction func terminalClearButtonClicked(_ sender: NSButton) {
-        let clearOption: ClearOptionType = terminalClearButton.state == .on ? .clear : .noClear
-        TerminalManager.shared.setClearOption(.terminal, clearOption)
+        do {
+            try DefaultsManager.shared.setNewOption(.terminal, .tab)
+        } catch {
+            logw(error.localizedDescription)
+        }
     }
     
     @IBAction func iTermWindowButtonClicked(_ sender: NSButton) {
         iTermTabButton.state = .off
-        TerminalManager.shared.setNewOption(.iTerm, .window)
+        do {
+            try DefaultsManager.shared.setNewOption(.iTerm, .window)
+        } catch {
+            logw(error.localizedDescription)
+        }
     }
     
     @IBAction func iTermTabButtonClicked(_ sender: NSButton) {
         iTermWindowButton.state = .off
-        TerminalManager.shared.setNewOption(.iTerm, .tab)
+        do {
+            try DefaultsManager.shared.setNewOption(.iTerm, .tab)
+        } catch {
+            logw(error.localizedDescription)
+        }
     }
     
-    @IBAction func iTermClearButtonClicked(_ sender: NSButton) {
-        let clearOption: ClearOptionType = iTermClearButton.state == .on ? .clear : .noClear
-        TerminalManager.shared.setClearOption(.iTerm, clearOption)
-    }
 }

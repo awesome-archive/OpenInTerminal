@@ -8,11 +8,12 @@
 
 import Cocoa
 import OpenInTerminalCore
+import MASShortcut
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
     
-    // MARK: Properties
+    // MARK: - Properties
     
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     
@@ -23,32 +24,54 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return storyboard.instantiateInitialController() as? PreferencesWindowController ?? PreferencesWindowController()
     }()
     
-    // MARK: Lifecycle
+    // MARK: - Lifecycle
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        CoreManager.shared.firstSetup()
+        DefaultsManager.shared.firstSetup()
         addObserver()
         terminateOpenInTerminalHelper()
-        setStatusBarIcon()
+        setStatusItemIcon()
+        setStatusItemVisible()
         setStatusToggle()
+        
+        logw("")
+        logw("App launched")
+        logw("macOS \(ProcessInfo().operatingSystemVersionString)")
+        logw("OpenInTerminal Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
+        
+        // bind global shortcuts
+        bindShortcuts()
+        
+        do {
+            // check scripts and install them if needed
+            try checkScripts()
+        } catch {
+            logw(error.localizedDescription)
+        }
     }
     
     func applicationWillTerminate(_ notification: Notification) {
         NSStatusBar.system.removeStatusItem(statusItem)
         
         removeObserver()
+        logw("App terminated")
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            preferencesWindowController.window?.makeKeyAndOrderFront(self)
+        }
+        
         return true
     }
+    
 }
 
 extension AppDelegate {
     
-    // MARK: Status Bar Item
+    // MARK: - Status Bar Item
     
-    func setStatusBarIcon() {
+    func setStatusItemIcon() {
         let icon = NSImage(assetIdentifier: .StatusBarIcon)
         icon.isTemplate = true // Support Dark Mode
         DispatchQueue.main.async {
@@ -56,10 +79,14 @@ extension AppDelegate {
         }
     }
     
+    func setStatusItemVisible() {
+        let isHideStatusItem = DefaultsManager.shared.isHideStatusItem.bool
+        statusItem.isVisible = !isHideStatusItem
+    }
+    
     func setStatusToggle() {
-        guard let quickOpen = CoreManager.shared.quickToggle else { return }
-        
-        if quickOpen == ._true {
+        let isQuickToogle = DefaultsManager.shared.isQuickToggle.bool
+        if isQuickToogle {
             statusItem.menu = nil
             if let button = statusItem.button {
                 button.action = #selector(statusBarButtonClicked)
@@ -73,7 +100,6 @@ extension AppDelegate {
     
     @objc func statusBarButtonClicked(sender: NSStatusBarButton) {
         let event = NSApp.currentEvent!
-        
         if event.type == .rightMouseDown || event.type == .rightMouseUp
             || event.modifierFlags.contains(.control)
         {
@@ -81,7 +107,7 @@ extension AppDelegate {
             statusItem.button?.performClick(self)
             statusItem.menu = nil
         } else if event.type == .leftMouseUp {
-            if let quickToggleType = CoreManager.shared.quickToggleType {
+            if let quickToggleType = DefaultsManager.shared.quickToggleType {
                 switch quickToggleType {
                 case .openWithDefaultTerminal:
                     openDefaultTerminal()
@@ -104,38 +130,15 @@ extension AppDelegate {
         }
     }
     
-    // MARK: Notification
+    // MARK: - Notification
     
     func addObserver() {
         OpenNotifier.addObserver(observer: self,
                                  selector: #selector(openDefaultTerminal),
                                  notification: .openDefaultTerminal)
         OpenNotifier.addObserver(observer: self,
-                                 selector: #selector(openTerminal),
-                                 notification: .openTerminal)
-        OpenNotifier.addObserver(observer: self,
-                                 selector: #selector(openITerm),
-                                 notification: .openITerm)
-        OpenNotifier.addObserver(observer: self,
-                                 selector: #selector(openHyper),
-                                 notification: .openHyper)
-        OpenNotifier.addObserver(observer: self,
-                                 selector: #selector(openAlacritty),
-                                 notification: .openAlacritty)
-        
-        OpenNotifier.addObserver(observer: self,
                                  selector: #selector(openDefaultEditor),
                                  notification: .openDefaultEditor)
-        OpenNotifier.addObserver(observer: self,
-                                 selector: #selector(openVSCode),
-                                 notification: .openVSCode)
-        OpenNotifier.addObserver(observer: self,
-                                 selector: #selector(openAtom),
-                                 notification: .openAtom)
-        OpenNotifier.addObserver(observer: self,
-                                 selector: #selector(openSublime),
-                                 notification: .openSublime)
-        
         OpenNotifier.addObserver(observer: self,
                                  selector: #selector(copyPathToClipboard),
                                  notification: .copyPathToClipboard)
@@ -143,63 +146,34 @@ extension AppDelegate {
     
     func removeObserver() {
         OpenNotifier.removeObserver(observer: self, notification: .openDefaultTerminal)
-        OpenNotifier.removeObserver(observer: self, notification: .openTerminal)
-        OpenNotifier.removeObserver(observer: self, notification: .openITerm)
-        OpenNotifier.removeObserver(observer: self, notification: .openHyper)
-        OpenNotifier.removeObserver(observer: self, notification: .openAlacritty)
-        
         OpenNotifier.removeObserver(observer: self, notification: .openDefaultEditor)
-        OpenNotifier.removeObserver(observer: self, notification: .openVSCode)
-        OpenNotifier.removeObserver(observer: self, notification: .openAtom)
-        OpenNotifier.removeObserver(observer: self, notification: .openSublime)
-        
         OpenNotifier.removeObserver(observer: self, notification: .copyPathToClipboard)
     }
     
     // MARK: Notification Actions
     
     @objc func openDefaultTerminal() {
-        guard let terminalType = TerminalManager.shared.getOrPickDefaultTerminal() else {
-            return
+        if let terminalType = DefaultsManager.shared.defaultTerminal {
+            TerminalManager.shared.openTerminal(terminalType)
+        } else {
+            guard let selectedTerminal = TerminalManager.shared.pickTerminalAlert() else {
+                return
+            }
+            DefaultsManager.shared.defaultTerminal = selectedTerminal
+            TerminalManager.shared.openTerminal(selectedTerminal)
         }
-        
-        TerminalManager.shared.openTerminal(terminalType)
-    }
-    
-    @objc func openTerminal() {
-        TerminalManager.shared.openTerminal(.terminal)
-    }
-    
-    @objc func openITerm() {
-        TerminalManager.shared.openTerminal(.iTerm)
-    }
-    
-    @objc func openHyper() {
-        TerminalManager.shared.openTerminal(.hyper)
-    }
-    
-    @objc func openAlacritty() {
-        TerminalManager.shared.openTerminal(.alacritty)
     }
     
     @objc func openDefaultEditor() {
-        guard let editorType = EditorManager.shared.getOrPickDefaultEditor() else {
-            return
+        if let editorType = DefaultsManager.shared.defaultEditor {
+            EditorManager.shared.openEditor(editorType)
+        } else {
+            guard let selectedEditor = EditorManager.shared.pickEditorAlert() else {
+                return
+            }
+            DefaultsManager.shared.defaultEditor = selectedEditor
+            EditorManager.shared.openEditor(selectedEditor)
         }
-        
-        EditorManager.shared.openEditor(editorType)
-    }
-    
-    @objc func openVSCode() {
-        EditorManager.shared.openEditor(.vscode)
-    }
-    
-    @objc func openAtom() {
-        EditorManager.shared.openEditor(.atom)
-    }
-    
-    @objc func openSublime() {
-        EditorManager.shared.openEditor(.sublime)
     }
     
     @objc func copyPathToClipboard() {
@@ -221,6 +195,28 @@ extension AppDelegate {
             
         } catch {
             logw(error.localizedDescription)
+        }
+    }
+}
+
+extension AppDelegate {
+    
+    // MARK: - Global Shortcuts
+    
+    func bindShortcuts() {
+        MASShortcutBinder.shared()?.bindShortcut(withDefaultsKey: Constants.Key.defaultTerminalShortcut) {
+            let appDelegate = NSApplication.shared.delegate as! AppDelegate
+            appDelegate.openDefaultTerminal()
+        }
+        
+        MASShortcutBinder.shared()?.bindShortcut(withDefaultsKey: Constants.Key.defaultEditorShortcut) {
+            let appDelegate = NSApplication.shared.delegate as! AppDelegate
+            appDelegate.openDefaultEditor()
+        }
+        
+        MASShortcutBinder.shared()?.bindShortcut(withDefaultsKey: Constants.Key.copyPathShortcut) {
+            let appDelegate = NSApplication.shared.delegate as! AppDelegate
+            appDelegate.copyPathToClipboard()
         }
     }
 }

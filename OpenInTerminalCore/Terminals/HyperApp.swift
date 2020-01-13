@@ -10,14 +10,14 @@ import Foundation
 
 final class HyperApp: Terminal {
     
-    func open(_ path: String, _ newOption: NewOptionType, _ clear: ClearOptionType) throws {
+    func open(_ path: String, _ newOption: NewOptionType) throws {
         
         guard let url = URL(string: path) else {
             throw OITError.wrongUrl
         }
         
         let source = """
-        do shell script "open -a Hyper \(url.path.hyperEscaped)"
+        do shell script "open -a Hyper \(url.path.specialCharEscaped)"
         """
         
         let script = NSAppleScript(source: source)!
@@ -27,30 +27,8 @@ final class HyperApp: Terminal {
         script.executeAndReturnError(&error)
         
         if error != nil {
-            throw OITError.cannotAccessHyper
+            throw OITError.cannotAccessApp(TerminalType.hyper.rawValue)
         }
     }
     
-}
-
-
-fileprivate extension String {
-    
-    // FIXME: if path contains "\" or """, application will crash.
-    // Special symbols have been tested, except for backslashes and double quotes.
-    var hyperEscaped: String {
-        
-        var result = ""
-        let set: [Character] = [" ", "(", ")", "&", "|", ";",
-                   "\"", "'", "<", ">", "`"]
-        
-        for char in self {
-            if set.contains(char) {
-                result += "\\\\"
-            }
-            result.append(char)
-        }
-        
-        return result
-    }
 }

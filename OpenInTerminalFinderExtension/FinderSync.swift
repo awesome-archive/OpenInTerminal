@@ -14,8 +14,17 @@ class FinderSync: FIFinderSync {
     
     override init() {
         super.init()
-        let pathURL = URL(fileURLWithPath: "/", isDirectory: true)
-        FIFinderSyncController.default().directoryURLs = Set([pathURL])
+        let finderSync = FIFinderSyncController.default()
+        if let mountedVolumes = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: nil, options: [.skipHiddenVolumes]) {
+            finderSync.directoryURLs = Set<URL>(mountedVolumes)
+        }
+        // Monitor volumes
+        let notificationCenter = NSWorkspace.shared.notificationCenter
+        notificationCenter.addObserver(forName: NSWorkspace.didMountNotification, object: nil, queue: .main) { notification in
+            if let volumeURL = notification.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL {
+                finderSync.directoryURLs.insert(volumeURL)
+            }
+        }
     }
 
     override var toolbarItemName: String {
@@ -25,7 +34,7 @@ class FinderSync: FIFinderSync {
     
     override var toolbarItemToolTip: String {
         return NSLocalizedString("toolbar.item_tooltip",
-                                 comment: "打开当前路径到终端")
+                                 comment: "Open current directory in Terminal.")
     }
     
     override var toolbarItemImage: NSImage {
@@ -33,86 +42,66 @@ class FinderSync: FIFinderSync {
     }
     
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
-        // Produce a menu for the extension.
-        let menu = NSMenu(title: "")
+        
+        var menu = NSMenu(title: "")
+        
+        func createMenu() -> NSMenu {
+            
+            let menu = NSMenu(title: "")
+            
+            var terminalTitle = ""
+            if let terminal = DefaultsManager.shared.defaultTerminal {
+                terminalTitle = NSLocalizedString("menu.open_in", comment: "Open in ") + terminal.rawValue
+            } else {
+                terminalTitle = NSLocalizedString("menu.open_with_default_terminal",
+                                                  comment: "Open with default Terminal")
+            }
+            let openInTerminalItem = NSMenuItem(title: terminalTitle,
+                                                action: #selector(openDefaultTerminal),
+                                                keyEquivalent: "")
+            let terminalIcon = NSImage(named: "context_menu_icon_terminal")!
+            openInTerminalItem.image = terminalIcon
+            menu.addItem(openInTerminalItem)
+            
+            var editorTitle = ""
+            if let editor = DefaultsManager.shared.defaultEditor {
+                editorTitle = NSLocalizedString("menu.open_in", comment: "Open in ") + editor.rawValue
+            } else {
+                editorTitle = NSLocalizedString("menu.open_with_default_editor",
+                                                comment: "Open with default Editor")
+            }
+            let openInEditorItem = NSMenuItem(title: editorTitle,
+                                                action: #selector(openDefaultEditor),
+                                                keyEquivalent: "")
+            let editorIcon = NSImage(named: "context_menu_icon_editor")!
+            openInEditorItem.image = editorIcon
+            menu.addItem(openInEditorItem)
+            
+            let copyPathItem = NSMenuItem(title: NSLocalizedString("menu.copy_path_to_clipboard",
+                                                                   comment: "Copy path to Clipboard"),
+                                                action: #selector(copyPathToClipboard),
+                                                keyEquivalent: "")
+            let copyPathIcon = NSImage(named: "context_menu_icon_path")
+            copyPathItem.image = copyPathIcon
+            menu.addItem(copyPathItem)
+            
+            return menu
+        }
         
         switch menuKind {
 
-        case .contextualMenuForContainer, .contextualMenuForItems:
-            menu.addItem(withTitle: NSLocalizedString("menu.open_with_default_terminal",
-                                                      comment: "Open with default Terminal"),
-                         action: #selector(openDefaultTerminal),
-                         keyEquivalent: "")
-            menu.addItem(withTitle: NSLocalizedString("menu.open_with_default_editor",
-                                                      comment: "Open with default Editor"),
-                         action: #selector(openDefaultEditor),
-                         keyEquivalent: "")
-            menu.addItem(withTitle: NSLocalizedString("menu.copy_path_to_clipboard",
-                                                      comment: "Copy path to Clipboard"),
-                         action: #selector(copyPathToClipboard),
-                         keyEquivalent: "")
-        
+        case .contextualMenuForContainer,
+             .contextualMenuForItems:
+            let isHideContextMenuItems = DefaultsManager.shared.isHideContextMenuItems.bool
+            if isHideContextMenuItems {
+                break
+            } else {
+                menu = createMenu()
+            }
+            
         case .toolbarItemMenu:
-        
-            menu.addItem(withTitle: TerminalType.terminal.rawValue,
-                         action: #selector(openTerminal),
-                         keyEquivalent: "")
-
-            if FinderManager.shared.terminalIsInstalled(.iTerm) {
-                menu.addItem(withTitle: TerminalType.iTerm.rawValue,
-                             action: #selector(openITerm),
-                             keyEquivalent: "")
-            }
-        
-            if FinderManager.shared.terminalIsInstalled(.hyper) {
-                menu.addItem(withTitle: TerminalType.hyper.rawValue,
-                             action: #selector(openHyper),
-                             keyEquivalent: "")
-            }
+            menu = createMenu()
             
-            if FinderManager.shared.terminalIsInstalled(.alacritty) {
-                menu.addItem(withTitle: TerminalType.alacritty.rawValue,
-                             action: #selector(openAlacritty),
-                             keyEquivalent: "")
-            }
-            
-            let separator = NSMenuItem.separator()
-            separator.title = "-----------------------"
-            menu.addItem(separator)
-            
-            var hasEditor = false
-            
-            if FinderManager.shared.editorIsInstalled(.vscode) {
-                menu.addItem(withTitle: EditorType.vscode.fullName,
-                             action: #selector(openVSCode),
-                             keyEquivalent: "")
-                hasEditor = true
-            }
-        
-            if FinderManager.shared.editorIsInstalled(.atom)  {
-                menu.addItem(withTitle: EditorType.atom.fullName,
-                             action: #selector(openAtom),
-                             keyEquivalent: "")
-                hasEditor = true
-            }
-            
-            if FinderManager.shared.editorIsInstalled(.sublime) {
-                menu.addItem(withTitle: EditorType.sublime.fullName,
-                             action: #selector(openSublime),
-                             keyEquivalent: "")
-                hasEditor = true
-            }
-            
-            if hasEditor {
-                let separator = NSMenuItem.separator()
-                separator.title = "-----------------------"
-                menu.addItem(separator)
-            }
-            
-            menu.addItem(withTitle: NSLocalizedString("menu.copy_path_to_clipboard",
-                                                      comment: "Copy path to Clipboard"),
-                         action: #selector(copyPathToClipboard),
-                         keyEquivalent: "")
         default:
             break
         }
@@ -120,46 +109,56 @@ class FinderSync: FIFinderSync {
         return menu
     }
     
+    var scriptPath: URL? {
+        return try? FileManager.default.url(for: .applicationScriptsDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+    }
+
+    func fileScriptPath(fileName: String) -> URL? {
+        return scriptPath?
+            .appendingPathComponent(fileName)
+            .appendingPathExtension("scpt")
+    }
+
     // MARK: Notification Actions
     
     @objc func openDefaultTerminal() {
-        OpenNotifier.postNotification(.openDefaultTerminal)
-    }
-    
-    @objc func openTerminal() {
-        OpenNotifier.postNotification(.openTerminal)
-    }
-    
-    @objc func openITerm() {
-        OpenNotifier.postNotification(.openITerm)
-    }
-    
-    @objc func openHyper() {
-        OpenNotifier.postNotification(.openHyper)
-    }
-    
-    @objc func openAlacritty() {
-        OpenNotifier.postNotification(.openAlacritty)
+        guard let terminal = DefaultsManager.shared.defaultTerminal else { return }
+        var scriptPath: URL
+        if terminal == .terminal,
+            let newOption = DefaultsManager.shared.getNewOption(.terminal),
+            newOption == .tab {
+            guard let fileScriptPath = fileScriptPath(fileName: terminal.rawValue + "-tab") else { return }
+            scriptPath = fileScriptPath
+        } else {
+            guard let fileScriptPath = fileScriptPath(fileName: terminal.rawValue) else { return }
+            scriptPath = fileScriptPath
+        }
+        guard FileManager.default.fileExists(atPath: scriptPath.path) else { return }
+        guard let script = try? NSUserAppleScriptTask(url: scriptPath) else { return }
+        script.execute(completionHandler: nil)
     }
     
     @objc func openDefaultEditor() {
-        OpenNotifier.postNotification(.openDefaultEditor)
-    }
-    
-    @objc func openVSCode() {
-        OpenNotifier.postNotification(.openVSCode)
-    }
-    
-    @objc func openAtom() {
-        OpenNotifier.postNotification(.openAtom)
-    }
-    
-    @objc func openSublime() {
-        OpenNotifier.postNotification(.openSublime)
+        guard let editor = DefaultsManager.shared.defaultEditor else { return }
+        guard let scriptPath = fileScriptPath(fileName: editor.rawValue) else { return }
+        guard FileManager.default.fileExists(atPath: scriptPath.path) else { return }
+        guard let script = try? NSUserAppleScriptTask(url: scriptPath) else { return }
+        script.execute(completionHandler: nil)
     }
     
     @objc func copyPathToClipboard() {
-        OpenNotifier.postNotification(.copyPathToClipboard)
+        var path = ""
+        if let items = FIFinderSyncController.default().selectedItemURLs(), items.count > 0 {
+            path = items[0].path
+        } else if let url = FIFinderSyncController.default().targetedURL() {
+            path = url.path
+        } else {
+            return
+        }
+        
+        // Set string
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(path, forType: .string)
     }
 }
 

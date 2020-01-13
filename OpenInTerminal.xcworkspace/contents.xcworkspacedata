@@ -7,4 +7,10 @@
    <FileRef
       location = "group:OpenInTerminal-Lite/OpenInTerminal-Lite.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:OpenInEditor-Lite/OpenInEditor-Lite.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Pods/Pods.xcodeproj">
+   </FileRef>
 </Workspace>

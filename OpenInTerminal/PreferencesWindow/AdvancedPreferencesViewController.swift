@@ -9,16 +9,25 @@
 import Cocoa
 import OpenInTerminalCore
 import ServiceManagement
+import MASShortcut
 
 class AdvancedPreferencesViewController: PreferencesViewController {
-
+    
+    @IBOutlet weak var defaultTerminalShortcut: MASShortcutView!
+    @IBOutlet weak var defaultEditorShortcut: MASShortcutView!
+    @IBOutlet weak var copyPathShortcut: MASShortcutView!
     @IBOutlet weak var resetPreferencesButton: NSButton!
     
     // MARK: Lifecycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        defaultTerminalShortcut.associatedUserDefaultsKey = Constants.Key.defaultTerminalShortcut
+        defaultEditorShortcut.associatedUserDefaultsKey = Constants.Key.defaultEditorShortcut
+        copyPathShortcut.associatedUserDefaultsKey = Constants.Key.copyPathShortcut
     }
+    
     
     // MARK: Button Actions
     
@@ -43,8 +52,10 @@ class AdvancedPreferencesViewController: PreferencesViewController {
         case .alertSecondButtonReturn:
             logw("Reset User Preferences")
             SMLoginItemSetEnabled(Constants.launcherAppIdentifier as CFString, false)
-            CoreManager.shared.removeAllUserDefaults()
-            CoreManager.shared.firstSetup()
+            DefaultsManager.shared.removeAllUserDefaults()
+            DefaultsManager.shared.firstSetup()
+            let appDelegate = NSApplication.shared.delegate as! AppDelegate
+            appDelegate.setStatusToggle()
         default:
             print("Cancel Resetting User Preferences")
         }
